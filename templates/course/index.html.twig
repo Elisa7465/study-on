@@ -1,39 +1,25 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Course index{% endblock %}
+{% block title %}Курсы / StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Course index</h1>
+    <h1>Курсы</h1>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>SymbolCode</th>
-                <th>Title</th>
-                <th>Description</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for course in courses %}
-            <tr>
-                <td>{{ course.id }}</td>
-                <td>{{ course.symbolCode }}</td>
-                <td>{{ course.title }}</td>
-                <td>{{ course.description }}</td>
-                <td>
-                    <a href="{{ path('app_course_show', {'id': course.id}) }}">show</a>
-                    <a href="{{ path('app_course_edit', {'id': course.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="5">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% if courses is not empty %}
+        <ul>
+            {% for course in courses %}
+                <li>
+                    <a href="{{ path('app_course_show', {'id': course.id}) }}">{{ course.title }}</a>
 
-    <a href="{{ path('app_course_new') }}">Create new</a>
+                    {% if course.description %}
+                        <p>{{ course.description }}</p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Курсы пока не добавлены.</p>
+    {% endif %}
+
+    <a href="{{ path('app_course_new') }}">Добавить новый курс</a>
 {% endblock %}

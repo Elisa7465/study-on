@@ -11,14 +11,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/course')]
+#[Route('/courses')]
 final class CourseController extends AbstractController
 {
-    #[Route(name: 'app_course_index', methods: ['GET'])]
+    #[Route('/', name: 'app_course_index', methods: ['GET'])]
     public function index(CourseRepository $courseRepository): Response
     {
         return $this->render('course/index.html.twig', [
-            'courses' => $courseRepository->findAll(),
+            'courses' => $courseRepository->findBy([], ['title' => 'ASC']),
         ]);
     }
 
@@ -33,7 +33,9 @@ final class CourseController extends AbstractController
             $entityManager->persist($course);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_course_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_course_show', [
+                'id' => $course->getId(),
+            ]);
         }
 
         return $this->render('course/new.html.twig', [
@@ -45,8 +47,13 @@ final class CourseController extends AbstractController
     #[Route('/{id}', name: 'app_course_show', methods: ['GET'])]
     public function show(Course $course): Response
     {
+        $lessons = $course->getLessons()->toArray();
+
+        usort($lessons, static fn ($left, $right) => $left->getSortOrder() <=> $right->getSortOrder());
+
         return $this->render('course/show.html.twig', [
             'course' => $course,
+            'lessons' => $lessons,
         ]);
     }
 
@@ -59,7 +66,9 @@ final class CourseController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_course_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_course_show', [
+                'id' => $course->getId(),
+            ]);
         }
 
         return $this->render('course/edit.html.twig', [
@@ -76,6 +85,6 @@ final class CourseController extends AbstractController
             $entityManager->flush();
         }
 
-        return $this->redirectToRoute('app_course_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('app_course_index');
     }
 }

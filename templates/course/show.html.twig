@@ -1,34 +1,37 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Course{% endblock %}
+{% block title %}{{ course.title }} / StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Course</h1>
+    <h1>{{ course.title }}</h1>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ course.id }}</td>
-            </tr>
-            <tr>
-                <th>SymbolCode</th>
-                <td>{{ course.symbolCode }}</td>
-            </tr>
-            <tr>
-                <th>Title</th>
-                <td>{{ course.title }}</td>
-            </tr>
-            <tr>
-                <th>Description</th>
-                <td>{{ course.description }}</td>
-            </tr>
-        </tbody>
-    </table>
+    {% if course.description %}
+        <p>{{ course.description }}</p>
+    {% endif %}
 
-    <a href="{{ path('app_course_index') }}">back to list</a>
+    <h2>Уроки</h2>
 
-    <a href="{{ path('app_course_edit', {'id': course.id}) }}">edit</a>
+    {% if lessons is not empty %}
+        <ul>
+            {% for lesson in lessons %}
+                <li>
+                    <a href="{{ path('app_lesson_show', {'id': lesson.id}) }}">{{ lesson.title }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Уроков пока нет.</p>
+    {% endif %}
+
+    <p>
+        <a href="{{ path('app_course_index') }}">Вернуться к списку</a>
+    </p>
+    <p>
+        <a href="{{ path('app_course_edit', {'id': course.id}) }}">Редактировать курс</a>
+    </p>
+    <p>
+        <a href="{{ path('app_lesson_new', {'course_id': course.id}) }}">Добавить урок</a>
+    </p>
 
     {{ include('course/_delete_form.html.twig') }}
 {% endblock %}

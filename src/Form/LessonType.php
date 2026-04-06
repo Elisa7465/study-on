@@ -2,26 +2,36 @@
 
 namespace App\Form;
 
-use App\Entity\Course;
 use App\Entity\Lesson;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use App\Form\DataTransformer\CourseToIdTransformer;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class LessonType extends AbstractType
 {
+    public function __construct(
+        private readonly CourseToIdTransformer $courseToIdTransformer,
+    ) {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('course', HiddenType::class)
             ->add('title')
-            ->add('content')
-            ->add('sortOrder')
-            ->add('course', EntityType::class, [
-                'class' => Course::class,
-                'choice_label' => 'id',
+            ->add('content', TextareaType::class, [
+                'attr' => [
+                    'rows' => 12,
+                ],
             ])
+            ->add('sortOrder', IntegerType::class)
         ;
+
+        $builder->get('course')->addModelTransformer($this->courseToIdTransformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
