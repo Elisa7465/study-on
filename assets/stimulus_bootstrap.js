@@ -1,4 +1,4 @@
-import { startStimulusApp } from '@symfony/stimulus-bundle';
+import { startStimulusApp } from '../vendor/symfony/stimulus-bundle/assets/dist/loader.js';
 
 const app = startStimulusApp();
 // register any custom, 3rd party controllers here

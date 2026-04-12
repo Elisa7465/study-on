@@ -3,23 +3,57 @@
 {% block title %}Курсы / StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Курсы</h1>
+    <div class="container py-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+            <div>
+                <h1 class="mb-1">Курсы</h1>
+                <p class="text-body-secondary mb-0">Список всех доступных курсов</p>
+            </div>
 
-    {% if courses is not empty %}
-        <ul>
-            {% for course in courses %}
-                <li>
-                    <a href="{{ path('app_course_show', {'id': course.id}) }}">{{ course.title }}</a>
+            <a class="btn btn-primary" href="{{ path('app_course_new') }}">
+                Добавить новый курс
+            </a>
+        </div>
 
-                    {% if course.description %}
-                        <p>{{ course.description }}</p>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Курсы пока не добавлены.</p>
-    {% endif %}
+        {% if courses is not empty %}
+            <div class="row g-4">
+                {% for course in courses %}
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title mb-3">
+                                    <a class="text-decoration-none" href="{{ path('app_course_show', {'id': course.id}) }}">
+                                        {{ course.title }}
+                                    </a>
+                                </h5>
 
-    <a href="{{ path('app_course_new') }}">Добавить новый курс</a>
+                                {% if course.description %}
+                                    <p class="card-text text-body-secondary flex-grow-1">
+                                        {{ course.description|length > 180
+                                            ? course.description|slice(0, 180) ~ '...'
+                                            : course.description
+                                        }}
+                                    </p>
+                                {% else %}
+                                    <p class="card-text text-body-secondary flex-grow-1">
+                                        Описание пока не добавлено.
+                                    </p>
+                                {% endif %}
+
+                                <div class="mt-3">
+                                    <a class="btn btn-outline-primary btn-sm" href="{{ path('app_course_show', {'id': course.id}) }}">
+                                        Открыть курс
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-light border shadow-sm mb-0">
+                Курсы пока не добавлены.
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
