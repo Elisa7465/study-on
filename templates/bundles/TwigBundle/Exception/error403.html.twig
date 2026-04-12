@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Доступ запрещён / StudyOn{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-5 text-center">
+                    <div class="display-3 fw-bold text-warning mb-3">403</div>
+                    <h1 class="h2 mb-3">Доступ запрещён</h1>
+                    <p class="text-body-secondary mb-4">
+                        У вас нет прав для просмотра этой страницы.
+                    </p>
+
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a class="btn btn-primary" href="{{ path('app_course_index') }}">К курсам</a>
+                        <a class="btn btn-outline-secondary" href="javascript:history.back()">Назад</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
