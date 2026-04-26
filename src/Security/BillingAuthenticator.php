@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Exception\BillingUnavailableException;
 use App\Service\BillingClient;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,10 +25,12 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
     use TargetPathTrait;
 
     public const LOGIN_ROUTE = 'app_login';
+    private const REMEMBER_ME_TOKEN_TTL = 604800;
 
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly BillingClient $billingClient
+        private readonly BillingClient $billingClient,
+        private readonly CacheItemPoolInterface $cache
     ) {
     }
 
@@ -85,6 +88,11 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
             if (isset($currentUser['balance'])) {
                 $user->setBalance((float) $currentUser['balance']);
             }
+
+            $cacheItem = $this->cache->getItem('billing_token_' . hash('sha256', $user->getUserIdentifier()));
+            $cacheItem->set($apiToken);
+            $cacheItem->expiresAfter(self::REMEMBER_ME_TOKEN_TTL);
+            $this->cache->save($cacheItem);
 
             return $user;
         };
