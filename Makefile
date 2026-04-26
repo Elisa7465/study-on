@@ -26,6 +26,9 @@ fixtload:
 encore_dev:
 	@${COMPOSE} run --rm node yarn encore dev
 
+encore_prod:
+	@${COMPOSE} run --rm node yarn encore production
+
 phpunit:
 	@${PHP} bin/phpunit
 

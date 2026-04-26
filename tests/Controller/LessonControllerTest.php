@@ -123,6 +123,7 @@ final class LessonControllerTest extends WebTestCase
         $crawler=$client->submit($form);
         self::assertResponseRedirects();
         $crawler=$client->followRedirect();
+        self::assertCount(3,$crawler->filter('.list-group-item'));
     }
 
 }

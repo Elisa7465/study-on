@@ -100,6 +100,28 @@ final class CourseControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('body', 'Курс с таким символьным кодом уже существует');
     }
+    public function testCreateCourseWithLinghtError(): void{
+        $client = static::createClient();
+
+        $datas=[
+            [
+                    'course[symbolCode]' => str_repeat('0', 256),
+                    'course[title]' => 'Основы Docker',
+                    'course[description]' => 'Курс по Docker',
+            ],
+            [
+                'course[symbolCode]' => 'course-without-title',
+                'course[title]' => str_repeat('0', 256),
+                'course[description]' => 'Курс по PHP',
+            ],           
+        ];
+        foreach ($datas as $data) {
+            $crawler = $client->request('GET', '/courses/new');
+            $form = $crawler->selectButton('Создать курс')->form($data);
+            $client->submit($form);
+            self::assertResponseStatusCodeSame(422);
+        }
+    }
 //страница редактирования курса
     public function testEditPageReturnsOk(): void
     {
