@@ -2,9 +2,21 @@
     <div class="container-fluid fw-bold">
         <a class="navbar-brand" href="{{ path('app_course_index') }}">StudyOn</a>
 
-        <div class="d-flex gap-3">
+        <div class="d-flex gap-3 align-items-center">
             <a class="nav-link px-0" href="{{ path('app_course_index') }}">Курсы</a>
-            <a class="btn btn-outline-primary btn-sm" href="{{ path('app_course_new') }}">Новый курс</a>
+
+            {% if app.user %}
+                <a class="nav-link px-0" href="{{ path('app_profile') }}">Профиль</a>
+                <a class="nav-link px-0" href="{{ path('app_logout') }}">Выйти</a>
+            {% else %}
+                <a class="nav-link px-0" href="{{ path('app_login') }}">Войти</a>
+            {% endif %}
+
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+                <a class="btn btn-outline-primary btn-sm" href="{{ path('app_course_new') }}">
+                    Новый курс
+                </a>
+            {% endif %}
         </div>
     </div>
 </nav>
