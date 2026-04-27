@@ -30,9 +30,11 @@
                                 </div>
 
                                 <div>
-                                    <a class="btn btn-outline-primary btn-sm" href="{{ path('app_lesson_show', {'id': lesson.id}) }}">
-                                        Открыть
-                                    </a>
+                                    {% if is_granted('ROLE_USER') %}
+                                        <a class="btn btn-outline-primary btn-sm" href="{{ path('app_lesson_show', {'id': lesson.id}) }}">
+                                            Открыть
+                                        </a>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

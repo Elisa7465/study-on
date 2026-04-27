@@ -9,10 +9,11 @@
                 <h1 class="mb-1">Курсы</h1>
                 <p class="text-body-secondary mb-0">Список всех доступных курсов</p>
             </div>
-
-            <a class="btn btn-primary" href="{{ path('app_course_new') }}">
-                Добавить новый курс
-            </a>
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+                <a class="btn btn-primary" href="{{ path('app_course_new') }}">
+                    Добавить новый курс
+                </a>
+            {% endif %}
         </div>
 
         {% if courses is not empty %}
