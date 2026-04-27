@@ -1,34 +1,92 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Log in!{% endblock %}
+{% block title %}Вход / StudyOn{% endblock %}
 
 {% block body %}
-<form method="post">
-    {% if error %}
-        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+    <main class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-5">
+                {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                    </div>
+                {% endif %}
 
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ logout_path() }}">Logout</a>
+                {% for message in app.flashes('danger') %}
+                    <div class="alert alert-danger">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+
+                {% for message in app.flashes('success') %}
+                    <div class="alert alert-success">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h1 class="h4 mb-0">Вход</h1>
+                    </div>
+
+                    <div class="card-body">
+                        <form method="post">
+                            <div class="mb-3">
+                                <label for="inputEmail" class="form-label">Email</label>
+                                <input
+                                    type="email"
+                                    value="{{ last_username }}"
+                                    name="email"
+                                    id="inputEmail"
+                                    class="form-control"
+                                    autocomplete="email"
+                                    required
+                                    autofocus
+                                >
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="inputPassword" class="form-label">Пароль</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="inputPassword"
+                                    class="form-control"
+                                    autocomplete="current-password"
+                                    required
+                                >
+                            </div>
+
+                            <input
+                                type="hidden"
+                                name="_csrf_token"
+                                data-controller="csrf-protection"
+                                value="{{ csrf_token('authenticate') }}"
+                            >
+
+                            <div class="form-check mb-3">
+                                <input
+                                    type="checkbox"
+                                    name="_remember_me"
+                                    id="rememberMe"
+                                    class="form-check-input"
+                                >
+                                <label for="rememberMe" class="form-check-label">
+                                    Запомнить меня
+                                </label>
+                            </div>
+
+                            <button class="btn btn-primary w-100" type="submit">
+                                Войти
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="card-footer bg-white text-center">
+                        <a href="{{ path('app_register') }}">Нет аккаунта? Зарегистрироваться</a>
+                    </div>
+                </div>
+            </div>
         </div>
-    {% endif %}
-
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-    <label for="inputEmail">Email</label>
-    <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-    <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
-
-    <div class="checkbox mb-3">
-        <label>
-            <input type="checkbox" name="_remember_me"> Remember me
-        </label>
-    </div>
-
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
-</form>
+    </main>
 {% endblock %}
