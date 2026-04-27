@@ -11,6 +11,18 @@
     </head>
     <body>
     {% include 'header.html.twig' %}
+    <div class="container">
+        {% for message in app.flashes('danger') %}
+            <div class="alert alert-danger" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
     {% block body %}{% endblock %}
 
     {% block javascripts %}

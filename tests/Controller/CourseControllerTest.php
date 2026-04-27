@@ -7,10 +7,11 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class CourseControllerTest extends WebTestCase
 {
+    use ControllerTestTrait;
       //проверка что на странице есть курсы
     public function testIndexReturnsOkAndShowsCourses(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
         $crawler = $client->request('GET', '/courses/');
 
         self::assertResponseIsSuccessful();
@@ -20,7 +21,7 @@ final class CourseControllerTest extends WebTestCase
 //проверка странички курса 
     public function testShowReturnsOkAndShowsCorrectLessonsCount(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
         $crawler=$client->request('GET', '/courses/');
 
         $link=$crawler->selectLink('Открыть курс')->first()->link();
@@ -33,7 +34,7 @@ final class CourseControllerTest extends WebTestCase
 //ошибка курса которого нет
     public function testShowReturns404ForMissingCourse(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
         $crawler=$client->request('GET', '/courses/999999');
 
         self::assertResponseStatusCodeSame(404);
@@ -41,7 +42,8 @@ final class CourseControllerTest extends WebTestCase
 //новый курс
     public function testNewPageReturnsOk(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler=$client->request('GET', '/courses/new');
 
         self::assertResponseIsSuccessful();
@@ -61,7 +63,8 @@ final class CourseControllerTest extends WebTestCase
 
     public function testCreateCourseValidationEmpty(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
 
         $datas=[
             [
@@ -86,7 +89,8 @@ final class CourseControllerTest extends WebTestCase
 
     public function testCreateCourseWithDuplicateSymbolCodeShowsValidationError(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler = $client->request('GET', '/courses/new');
 
         $form = $crawler->selectButton('Создать курс')->form([
@@ -101,7 +105,8 @@ final class CourseControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'Курс с таким символьным кодом уже существует');
     }
     public function testCreateCourseWithLinghtError(): void{
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
 
         $datas=[
             [
@@ -125,7 +130,8 @@ final class CourseControllerTest extends WebTestCase
 //страница редактирования курса
     public function testEditPageReturnsOk(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler = $client->request('GET', '/courses/');
 
         $link=$crawler->selectLink('Открыть курс')->first()->link();
@@ -149,7 +155,8 @@ final class CourseControllerTest extends WebTestCase
 
     public function testEditReturns404ForMissingCourse(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler=$client->request('GET', '/courses/999999/edit');
 
         self::assertResponseStatusCodeSame(404);
@@ -157,7 +164,8 @@ final class CourseControllerTest extends WebTestCase
 
     public function testDeleteCourse(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler = $client->request('GET', '/courses/');
 
         $link=$crawler->selectLink('Открыть курс')->first()->link();
@@ -168,5 +176,58 @@ final class CourseControllerTest extends WebTestCase
         self::assertResponseRedirects();
         $crawler=$client->followRedirect();
         self::assertCount(6,$crawler->filter('.card-title a'));
+    }
+
+
+    public function testGuestCanOpenCoursesList(): void
+    {
+        $client = $this->createClientWithBillingMock();
+
+        $client->request('GET', '/courses/');
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testGuestCanOpenCoursePage(): void
+    {
+        $client = $this->createClientWithBillingMock();
+
+        $crawler = $client->request('GET', '/courses/');
+        $link = $crawler->selectLink('Открыть курс')->first()->link();
+
+        $client->click($link);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testGuestCannotOpenNewCoursePage(): void
+    {
+        $client = $this->createClientWithBillingMock();
+
+        $client->request('GET', '/courses/new');
+
+        self::assertResponseRedirects();
+        self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
+    }
+
+    public function testRegularUserCannotOpenNewCoursePage(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/courses/new');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testRegularUserDoesNotSeeCourseManagementButtons(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/courses/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('body', 'Новый курс');
     }
 }

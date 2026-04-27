@@ -4,12 +4,15 @@ namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
+
+
 final class LessonControllerTest extends WebTestCase
 {
+    use ControllerTestTrait;
       //проверка что на странице есть уроки
       public function testIndexReturnsOkAndShowsLessons(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
         $crawler = $client->request('GET', '/lessons/');
 
         self::assertResponseIsSuccessful();
@@ -19,7 +22,7 @@ final class LessonControllerTest extends WebTestCase
 
     public function testShowReturns404ForMissingLesson(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
         $crawler = $client->request('GET', '/lessons/999999');
 
         self::assertResponseStatusCodeSame(404);
@@ -28,7 +31,8 @@ final class LessonControllerTest extends WebTestCase
    //Добавление урока через курс
     public function testAddLessonToCourse(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler = $client->request('GET', '/courses/');
 
         $link=$crawler->selectLink('Открыть')->first()->link();
@@ -54,7 +58,8 @@ final class LessonControllerTest extends WebTestCase
     //валидация урока по пустым полям
     public function testAddLessonValidationEmpty(): void
     {
-      $client=static::createClient();
+      $client=$this->createClientWithBillingMock();
+      $this->loginAdminDirectly($client);
       $datas=[
             ['lesson[title]' => '', 'lesson[content]' => '', 'lesson[sortOrder]' => 100],
             ['lesson[title]' => 'Новый урок', 'lesson[content]' => '', 'lesson[sortOrder]' => 100],
@@ -71,7 +76,8 @@ final class LessonControllerTest extends WebTestCase
     //валидация урока по длинным значениям и отрицательным
     public function testAddLessonValidationLength(): void
     {
-        $client=static::createClient();
+        $client=$this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $datas=[
             ['lesson[title]' => str_repeat('0', 256), 'lesson[content]' => 'Новый урок', 'lesson[sortOrder]' => 100],
             ['lesson[title]' => 'Новый урок', 'lesson[content]' => 'Новый урок', 'lesson[sortOrder]' => -100],
@@ -88,7 +94,8 @@ final class LessonControllerTest extends WebTestCase
     //редактирование урока
     public function testEditLesson(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler = $client->request('GET', '/lessons/');
 
         $link=$crawler->selectLink('Открыть')->first()->link();
@@ -113,7 +120,8 @@ final class LessonControllerTest extends WebTestCase
     //удаление урока
     public function testDeleteLesson(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
         $crawler = $client->request('GET', '/lessons/');
 
         $link=$crawler->selectLink('Открыть')->first()->link();
@@ -124,6 +132,58 @@ final class LessonControllerTest extends WebTestCase
         self::assertResponseRedirects();
         $crawler=$client->followRedirect();
         self::assertCount(3,$crawler->filter('.list-group-item'));
+    }
+
+    public function testGuestCannotViewLessonContent(): void
+    {
+        $client = $this->createClientWithBillingMock();
+
+        $client->request('GET', '/lessons/1');
+
+        self::assertResponseRedirects();
+        self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
+    }
+
+    public function testUserCanViewLessonContent(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/lessons/1');
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testRegularUserCannotEditLesson(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/lessons/1/edit');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testRegularUserDoesNotSeeLessonManagementButtons(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/lessons/1');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('body', 'Редактировать');
+        self::assertSelectorTextNotContains('body', 'Удалить урок');
+    }
+
+    public function testAdminCanOpenNewLessonPage(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginAdminDirectly($client);
+
+        $client->request('GET', '/lessons/new');
+
+        self::assertResponseIsSuccessful();
     }
 
 }
