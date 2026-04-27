@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Регистрация / StudyOn{% endblock %}
+
+{% block body %}
+    <main class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-5">
+                {% for message in app.flashes('danger') %}
+                    <div class="alert alert-danger">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h1 class="h4 mb-0">Регистрация</h1>
+                    </div>
+
+                    <div class="card-body">
+                        {{ form_start(registration_form) }}
+                            <div class="mb-3">
+                                {{ form_label(registration_form.email) }}
+                                {{ form_widget(registration_form.email, {
+                                    attr: {
+                                        class: 'form-control',
+                                        autocomplete: 'email'
+                                    }
+                                }) }}
+                                {{ form_errors(registration_form.email) }}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form_label(registration_form.password.first) }}
+                                {{ form_widget(registration_form.password.first, {
+                                    attr: {
+                                        class: 'form-control',
+                                        autocomplete: 'new-password'
+                                    }
+                                }) }}
+                                {{ form_errors(registration_form.password.first) }}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form_label(registration_form.password.second) }}
+                                {{ form_widget(registration_form.password.second, {
+                                    attr: {
+                                        class: 'form-control',
+                                        autocomplete: 'new-password'
+                                    }
+                                }) }}
+                                {{ form_errors(registration_form.password.second) }}
+                            </div>
+
+                            {{ form_errors(registration_form.password) }}
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                Зарегистрироваться
+                            </button>
+                        {{ form_end(registration_form) }}
+                    </div>
+
+                    <div class="card-footer bg-white text-center">
+                        <a href="{{ path('app_login') }}">Уже есть аккаунт? Войти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

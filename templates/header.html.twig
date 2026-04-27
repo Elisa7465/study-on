@@ -10,6 +10,7 @@
                 <a class="nav-link px-0" href="{{ path('app_logout') }}">Выйти</a>
             {% else %}
                 <a class="nav-link px-0" href="{{ path('app_login') }}">Войти</a>
+                <a class="nav-link px-0" href="{{ path('app_register') }}">Регистрация</a>
             {% endif %}
 
             {% if is_granted('ROLE_SUPER_ADMIN') %}
