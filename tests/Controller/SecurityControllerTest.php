@@ -7,7 +7,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class SecurityControllerTest extends WebTestCase
 {
     use ControllerTestTrait;
-
+      //авторизация вообще есть 
     public function testLoginPageIsAccessible(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -21,7 +21,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertSelectorExists('input[name="password"]');
         self::assertSelectorExists('button[type="submit"]');
     }
-
+//авторизация успешна
     public function testLoginSuccess(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -35,7 +35,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Курсы');
     }
-
+//рлохой пароль
     public function testLoginFailure(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -49,7 +49,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('.alert-danger');
     }
-
+//если биллинг недоступен
     public function testLoginShowsErrorWhenBillingUnavailable(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -65,7 +65,7 @@ final class SecurityControllerTest extends WebTestCase
             'Сервис временно недоступен. Попробуйте авторизоваться позднее'
         );
     }
-
+//при авторизации редиректна профиль
     public function testLoginRedirectsIfAlreadyAuthenticated(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -76,7 +76,7 @@ final class SecurityControllerTest extends WebTestCase
 
         self::assertResponseRedirects('/profile');
     }
-
+//страничка регистрации есть
     public function testRegisterPageIsAccessible(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -91,7 +91,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertSelectorExists('input[name="register[password][second]"]');
         self::assertSelectorExists('button[type="submit"]');
     }
-
+//регистрация успешна
     public function testRegisterSuccess(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -111,7 +111,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Курсы');
     }
-
+//пароли не совпадают при регистрации
     public function testRegisterPasswordMismatch(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -127,7 +127,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorExists('.invalid-feedback');
     }
-
+//короткий пароль при регистрации
     public function testRegisterShortPasswordShowsValidationError(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -143,7 +143,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorExists('.invalid-feedback');
     }
-
+//существует пользователь с таким email
     public function testRegisterDuplicateEmail(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -160,7 +160,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertSelectorExists('.alert-danger');
         self::assertSelectorTextContains('body', 'Пользователь с таким email уже существует');
     }
-
+//если биллинг недоступен
     public function testRegisterShowsErrorWhenBillingUnavailable(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -179,7 +179,7 @@ final class SecurityControllerTest extends WebTestCase
             'Сервис временно недоступен. Попробуйте зарегистрироваться позднее'
         );
     }
-
+//при регистрации редиректна профиль
     public function testRegisterRedirectsIfAlreadyAuthenticated(): void
     {
         $client = $this->createClientWithBillingMock();

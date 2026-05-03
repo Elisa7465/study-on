@@ -152,7 +152,7 @@ final class CourseControllerTest extends WebTestCase
         $crawler = $client->followRedirect();
         self::assertSelectorTextContains('h1', 'Новое имя для курса');
     }
-
+//админ пробует редактировать несуществующий курс
     public function testEditReturns404ForMissingCourse(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -161,7 +161,7 @@ final class CourseControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(404);
     }
-
+//админ удаляет курс
     public function testDeleteCourse(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -178,7 +178,7 @@ final class CourseControllerTest extends WebTestCase
         self::assertCount(6,$crawler->filter('.card-title a'));
     }
 
-
+//гость пробует открыть список курсов
     public function testGuestCanOpenCoursesList(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -187,7 +187,7 @@ final class CourseControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
     }
-
+//гость пробует открыть курс
     public function testGuestCanOpenCoursePage(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -199,7 +199,7 @@ final class CourseControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
     }
-
+//гость не может открыть страницу создания курса
     public function testGuestCannotOpenNewCoursePage(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -209,7 +209,7 @@ final class CourseControllerTest extends WebTestCase
         self::assertResponseRedirects();
         self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
     }
-
+//пользователь не может открыть страницу создания курса
     public function testRegularUserCannotOpenNewCoursePage(): void
     {
         $client = $this->createClientWithBillingMock();
@@ -219,7 +219,7 @@ final class CourseControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(403);
     }
-
+//пользователь не видит кнопки управления курсом
     public function testRegularUserDoesNotSeeCourseManagementButtons(): void
     {
         $client = $this->createClientWithBillingMock();

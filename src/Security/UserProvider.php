@@ -4,7 +4,7 @@ namespace App\Security;
 
 use App\Exception\BillingUnavailableException;
 use App\Service\BillingClient;
-use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
@@ -17,20 +17,19 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
     public function __construct(
         private readonly BillingClient $billingClient,
-        private readonly CacheItemPoolInterface $cache,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
     public function loadUserByIdentifier($identifier): UserInterface
     {
-        $tokenItem = $this->cache->getItem('billing_token_' . hash('sha256', $identifier));
+        $token = $this->requestStack->getMainRequest()?->cookies->get(BillingAuthenticator::BILLING_TOKEN_COOKIE);
 
-        if (!$tokenItem->isHit()) {
+        if (null === $token || '' === $token) {
             throw new UserNotFoundException('Пользователь не найден.');
         }
 
         try {
-            $token = $tokenItem->get();
             $currentUserResponse = $this->billingClient->getCurrentUser($token);
         } catch (BillingUnavailableException) {
             throw new CustomUserMessageAuthenticationException(
@@ -45,10 +44,15 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         }
 
         $currentUser = $currentUserResponse['data'];
+        $username = (string) ($currentUser['username'] ?? '');
+
+        if ('' === $username || $username !== (string) $identifier) {
+            throw new UserNotFoundException('Пользователь не найден.');
+        }
 
         $user = new User();
 
-        $user->setEmail($currentUser['username'] ?? '');
+        $user->setEmail($username);
         $user->setRoles($currentUser['roles'] ?? []);
         $user->setApiToken($token);
 

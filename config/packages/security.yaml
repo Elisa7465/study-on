@@ -20,6 +20,8 @@ security:
             custom_authenticator: App\Security\BillingAuthenticator
             logout:
                 path: app_logout
+                delete_cookies:
+                    billing_token: null
                 # where to redirect after logout
                 # target: app_any_route
 

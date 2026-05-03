@@ -4,7 +4,7 @@ namespace App\Security;
 
 use App\Exception\BillingUnavailableException;
 use App\Service\BillingClient;
-use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,12 +25,12 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
     use TargetPathTrait;
 
     public const LOGIN_ROUTE = 'app_login';
+    public const BILLING_TOKEN_COOKIE = 'billing_token';
     private const REMEMBER_ME_TOKEN_TTL = 604800;
 
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly BillingClient $billingClient,
-        private readonly CacheItemPoolInterface $cache
     ) {
     }
 
@@ -89,11 +89,6 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
                 $user->setBalance((float) $currentUser['balance']);
             }
 
-            $cacheItem = $this->cache->getItem('billing_token_' . hash('sha256', $user->getUserIdentifier()));
-            $cacheItem->set($apiToken);
-            $cacheItem->expiresAfter(self::REMEMBER_ME_TOKEN_TTL);
-            $this->cache->save($cacheItem);
-
             return $user;
         };
 
@@ -115,10 +110,30 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
         string $firewallName
     ): ?Response {
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
-            return new RedirectResponse($targetPath);
+            $response = new RedirectResponse($targetPath);
+        } else {
+            $response = new RedirectResponse($this->urlGenerator->generate('app_course_index'));
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('app_course_index'));
+        $user = $token->getUser();
+
+        if ($user instanceof User && null !== $user->getApiToken()) {
+            $rememberMeEnabled = $request->getPayload()->getBoolean('_remember_me');
+            $cookie = Cookie::create(self::BILLING_TOKEN_COOKIE)
+                ->withValue($user->getApiToken())
+                ->withPath('/')
+                ->withHttpOnly(true)
+                ->withSecure($request->isSecure())
+                ->withSameSite(Cookie::SAMESITE_LAX);
+
+            if ($rememberMeEnabled) {
+                $cookie = $cookie->withExpires(time() + self::REMEMBER_ME_TOKEN_TTL);
+            }
+
+            $response->headers->setCookie($cookie);
+        }
+
+        return $response;
     }
 
     protected function getLoginUrl(Request $request): string
