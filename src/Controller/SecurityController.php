@@ -76,6 +76,7 @@ class SecurityController extends AbstractController
             }
 
             $token = (string) $registerResponse['data']['token'];
+            $refreshToken = $registerResponse['data']['refresh_token'] ?? $registerResponse['data']['refreshToken'] ?? null;
 
             try {
                 $currentUserResponse = $billingClient->getCurrentUser($token);
@@ -100,7 +101,8 @@ class SecurityController extends AbstractController
             $user
                 ->setEmail((string) $data['username'])
                 ->setRoles($data['roles'] ?? [])
-                ->setApiToken($token);
+                ->setApiToken($token)
+                ->setRefreshToken(null === $refreshToken ? null : (string) $refreshToken);
 
             if (isset($data['balance'])) {
                 $user->setBalance((float) $data['balance']);

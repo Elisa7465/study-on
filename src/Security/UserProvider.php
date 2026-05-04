@@ -12,34 +12,39 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
+use App\Service\JwtDecoder;
 
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
     public function __construct(
         private readonly BillingClient $billingClient,
         private readonly RequestStack $requestStack,
+        private readonly JwtDecoder $jwtDecoder,
     ) {
     }
 
     public function loadUserByIdentifier($identifier): UserInterface
     {
         $token = $this->requestStack->getMainRequest()?->cookies->get(BillingAuthenticator::BILLING_TOKEN_COOKIE);
+        $refreshToken = $this->requestStack->getMainRequest()?->cookies->get(
+            BillingAuthenticator::BILLING_REFRESH_TOKEN_COOKIE
+        );
 
         if (null === $token || '' === $token) {
-            throw new UserNotFoundException('Пользователь не найден.');
+            throw new UserNotFoundException('РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ.');
         }
 
         try {
             $currentUserResponse = $this->billingClient->getCurrentUser($token);
         } catch (BillingUnavailableException) {
             throw new CustomUserMessageAuthenticationException(
-                'Сервис временно недоступен. Попробуйте авторизоваться позднее.'
+                'РЎРµСЂРІРёСЃ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РџРѕРїСЂРѕР±СѓР№С‚Рµ Р°РІС‚РѕСЂРёР·РѕРІР°С‚СЊСЃСЏ РїРѕР·РґРЅРµРµ.'
             );
         }
 
         if (200 !== $currentUserResponse['code']) {
             throw new CustomUserMessageAuthenticationException(
-                $currentUserResponse['data']['message'] ?? 'Ошибка авторизации'
+                $currentUserResponse['data']['message'] ?? 'РћС€РёР±РєР° Р°РІС‚РѕСЂРёР·Р°С†РёРё'
             );
         }
 
@@ -47,7 +52,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $username = (string) ($currentUser['username'] ?? '');
 
         if ('' === $username || $username !== (string) $identifier) {
-            throw new UserNotFoundException('Пользователь не найден.');
+            throw new UserNotFoundException('РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ.');
         }
 
         $user = new User();
@@ -55,6 +60,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $user->setEmail($username);
         $user->setRoles($currentUser['roles'] ?? []);
         $user->setApiToken($token);
+        $user->setRefreshToken($refreshToken);
 
         if (isset($currentUser['balance'])) {
             $user->setBalance((float) $currentUser['balance']);
@@ -72,6 +78,38 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     {
         if (!$user instanceof User) {
             throw new UnsupportedUserException(sprintf('Invalid user class "%s".', $user::class));
+        }
+
+        if (!$this->jwtDecoder->isExpired($user->getApiToken())) {
+            return $user;
+        }
+
+        $refreshToken = $user->getRefreshToken();
+
+        if (null === $refreshToken || '' === $refreshToken) {
+            return $user;
+        }
+
+        try {
+            $refreshResponse = $this->billingClient->getTokenByRefreshToken($refreshToken);
+        } catch (BillingUnavailableException) {
+            return $user;
+        }
+
+        if (200 !== ($refreshResponse['code'] ?? 0)) {
+            return $user;
+        }
+
+        $data = $refreshResponse['data'] ?? [];
+
+        if (isset($data['token'])) {
+            $user->setApiToken($data['token']);
+        }
+
+        if (isset($data['refresh_token'])) {
+            $user->setRefreshToken($data['refresh_token']);
+        } elseif (isset($data['refreshToken'])) {
+            $user->setRefreshToken($data['refreshToken']);
         }
 
         return $user;

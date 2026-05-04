@@ -11,6 +11,13 @@ class BillingClient
     ) {
     }
 
+    public function getTokenByRefreshToken(string $refreshToken): array
+    {
+        return $this->request('POST', '/api/v1/token/refresh', [
+            'refresh_token' => $refreshToken,
+        ]);
+    }
+    
     public function auth(string $username, string $password): array
     {
         return $this->request('POST', '/api/v1/auth', [

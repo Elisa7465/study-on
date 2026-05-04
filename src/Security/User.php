@@ -17,6 +17,20 @@ class User implements UserInterface
 
     private ?string $apiToken = null;
 
+    private ?string $refreshToken = null;
+
+
+    public function getRefreshToken(): ?string
+    {
+        return $this->refreshToken;
+    }
+
+    public function setRefreshToken(?string $refreshToken): self
+    {
+        $this->refreshToken = $refreshToken;
+
+        return $this;
+    }
     public function getEmail(): ?string
     {
         return $this->email;

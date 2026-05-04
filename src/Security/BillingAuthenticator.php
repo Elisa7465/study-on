@@ -26,6 +26,7 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
 
     public const LOGIN_ROUTE = 'app_login';
     public const BILLING_TOKEN_COOKIE = 'billing_token';
+    public const BILLING_REFRESH_TOKEN_COOKIE = 'billing_refresh_token';
     private const REMEMBER_ME_TOKEN_TTL = 604800;
 
     public function __construct(
@@ -56,12 +57,13 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
         }
 
         $apiToken = $authResponse['data']['token'] ?? null;
+        $refreshToken = $authResponse['data']['refresh_token'] ?? $authResponse['data']['refreshToken'] ?? null;
 
         if (null === $apiToken) {
             throw new CustomUserMessageAuthenticationException('Ошибка авторизации.');
         }
 
-        $userLoader = function () use ($apiToken): User {
+        $userLoader = function () use ($apiToken, $refreshToken): User {
             try {
                 $currentUserResponse = $this->billingClient->getCurrentUser($apiToken);
             } catch (BillingUnavailableException) {
@@ -83,7 +85,8 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
             $user
                 ->setEmail($currentUser['username'] ?? '')
                 ->setRoles($currentUser['roles'] ?? [])
-                ->setApiToken($apiToken);
+                ->setApiToken($apiToken)
+                ->setRefreshToken(null === $refreshToken ? null : (string) $refreshToken);
 
             if (isset($currentUser['balance'])) {
                 $user->setBalance((float) $currentUser['balance']);
@@ -93,7 +96,7 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
         };
 
         return new SelfValidatingPassport(
-            new UserBadge($apiToken, $userLoader),
+            new UserBadge($email, $userLoader),
             [
                 new CsrfTokenBadge(
                     'authenticate',
@@ -119,7 +122,7 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
 
         if ($user instanceof User && null !== $user->getApiToken()) {
             $rememberMeEnabled = $request->getPayload()->getBoolean('_remember_me');
-            $cookie = Cookie::create(self::BILLING_TOKEN_COOKIE)
+            $accessTokenCookie = Cookie::create(self::BILLING_TOKEN_COOKIE)
                 ->withValue($user->getApiToken())
                 ->withPath('/')
                 ->withHttpOnly(true)
@@ -127,10 +130,26 @@ class BillingAuthenticator extends AbstractLoginFormAuthenticator
                 ->withSameSite(Cookie::SAMESITE_LAX);
 
             if ($rememberMeEnabled) {
-                $cookie = $cookie->withExpires(time() + self::REMEMBER_ME_TOKEN_TTL);
+                $accessTokenCookie = $accessTokenCookie->withExpires(time() + self::REMEMBER_ME_TOKEN_TTL);
             }
 
-            $response->headers->setCookie($cookie);
+            $response->headers->setCookie($accessTokenCookie);
+        }
+
+        if ($user instanceof User && null !== $user->getRefreshToken()) {
+            $rememberMeEnabled = $request->getPayload()->getBoolean('_remember_me');
+            $refreshTokenCookie = Cookie::create(self::BILLING_REFRESH_TOKEN_COOKIE)
+                ->withValue($user->getRefreshToken())
+                ->withPath('/')
+                ->withHttpOnly(true)
+                ->withSecure($request->isSecure())
+                ->withSameSite(Cookie::SAMESITE_LAX);
+
+            if ($rememberMeEnabled) {
+                $refreshTokenCookie = $refreshTokenCookie->withExpires(time() + self::REMEMBER_ME_TOKEN_TTL);
+            }
+
+            $response->headers->setCookie($refreshTokenCookie);
         }
 
         return $response;
