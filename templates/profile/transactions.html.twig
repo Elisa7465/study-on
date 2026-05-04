@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}История операций / Профиль / StudyOn{% endblock %}
+
+{% block body %}
+    <h1>История операций</h1>
+
+    <a href="{{ path('app_profile') }}" class="btn btn-secondary mb-3">
+        Вернуться в профиль
+    </a>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Курс</th>
+                <th>Сумма</th>
+                <th>Действует до</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+                <tr>
+                    <td>
+                        {{ transaction.created_at|date('d.m.Y H:i') }}
+                    </td>
+                    <td>
+                        {% if transaction.type == 'deposit' %}
+                            Пополнение
+                        {% elseif transaction.type == 'payment' %}
+                            Списание
+                        {% else %}
+                            {{ transaction.type }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if transaction.course_code is defined and courses[transaction.course_code] is defined %}
+                            <a href="{{ path('app_course_show', {'id': courses[transaction.course_code].id}) }}">
+                                {{ courses[transaction.course_code].title }}
+                            </a>
+                        {% elseif transaction.course_code is defined %}
+                            {{ transaction.course_code }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ transaction.amount }} ₽
+                    </td>
+                    <td>
+                        {% if transaction.expires_at is defined %}
+                            {{ transaction.expires_at|date('d.m.Y H:i') }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5">
+                        Операций пока нет
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

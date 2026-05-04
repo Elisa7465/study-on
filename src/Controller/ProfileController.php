@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Exception\BillingUnavailableException;
+use App\Repository\CourseRepository;
 use App\Security\User;
 use App\Service\BillingClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,13 +26,11 @@ final class ProfileController extends AbstractController
         try {
             $response = $billingClient->getCurrentUser($user->getApiToken());
         } catch (BillingUnavailableException) {
-            $this->addFlash('danger', 'Сервис временно недоступен');
-
-            return $this->redirectToRoute('app_course_index');
+            return $this->render('billing/unavailable.html.twig');
         }
 
         if (Response::HTTP_OK !== $response['code']) {
-            throw $this->createAccessDeniedException();
+            return $this->render('billing/unavailable.html.twig');
         }
 
         $data = $response['data'];
@@ -41,6 +40,50 @@ final class ProfileController extends AbstractController
             'email' => $data['username'] ?? $user->getEmail(),
             'role' => in_array('ROLE_SUPER_ADMIN', $roles, true) ? 'Администратор' : 'Пользователь',
             'balance' => $data['balance'] ?? 0,
+        ]);
+    }
+
+    #[Route('/profile/transactions', name: 'app_profile_transactions', methods: ['GET'])]
+    public function transactions(
+        BillingClient $billingClient,
+        CourseRepository $courseRepository,
+    ): Response {
+        $user = $this->getUser();
+
+        if (!$user instanceof User || null === $user->getApiToken()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        try {
+            $response = $billingClient->getTransactions($user->getApiToken());
+        } catch (BillingUnavailableException) {
+            return $this->render('billing/unavailable.html.twig');
+        }
+
+        if (Response::HTTP_OK !== ($response['code'] ?? 500)) {
+            return $this->render('billing/unavailable.html.twig');
+        }
+
+        $transactions = $response['data'] ?? [];
+        $courses = [];
+
+        foreach ($transactions as $transaction) {
+            if (!isset($transaction['course_code'])) {
+                continue;
+            }
+
+            $course = $courseRepository->findOneBy([
+                'symbolCode' => $transaction['course_code'],
+            ]);
+
+            if (null !== $course) {
+                $courses[$transaction['course_code']] = $course;
+            }
+        }
+
+        return $this->render('profile/transactions.html.twig', [
+            'transactions' => $transactions,
+            'courses' => $courses,
         ]);
     }
 }

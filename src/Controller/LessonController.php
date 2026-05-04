@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Service\CourseAccessService;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 #[Route('/lessons')]
 final class LessonController extends AbstractController
@@ -62,8 +64,18 @@ final class LessonController extends AbstractController
 
     #[Route('/{id}', name: 'app_lesson_show', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Содержимое урока доступно только авторизованным пользователям.')]
-    public function show(Lesson $lesson): Response
+    public function show(Lesson $lesson, CourseAccessService $courseAccessService): Response
     {
+        $user = $this->getUser();
+
+        if (!$user instanceof \App\Security\User) {
+            throw new AccessDeniedException();
+        }
+
+        if (!$courseAccessService->hasAccessToCourse($user, $lesson->getCourse())) {
+            throw new AccessDeniedException();
+        }
+
         return $this->render('lesson/show.html.twig', [
             'lesson' => $lesson,
         ]);

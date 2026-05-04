@@ -11,13 +11,49 @@ class BillingClient
     ) {
     }
 
+
+    public function getCourses(): array
+    {
+        return $this->request('GET', '/api/v1/courses');
+    }
+
+    public function getCourse(string $code): array
+    {
+        return $this->request('GET', sprintf('/api/v1/courses/%s', $code));
+    }
+
+    public function payCourse(string $code, string $token): array
+    {
+        return $this->request(
+            'POST',
+            sprintf('/api/v1/courses/%s/pay', $code),
+            [],
+            $token
+        );
+    }
+
+    public function getTransactions(string $token, array $filters = []): array
+    {
+        $query = http_build_query([
+            'filter' => $filters,
+        ]);
+
+        $path = '/api/v1/transactions';
+
+        if ('' !== $query) {
+            $path .= '?' . $query;
+        }
+
+        return $this->request('GET', $path, [], $token);
+    }
+    
     public function getTokenByRefreshToken(string $refreshToken): array
     {
         return $this->request('POST', '/api/v1/token/refresh', [
             'refresh_token' => $refreshToken,
         ]);
     }
-    
+
     public function auth(string $username, string $password): array
     {
         return $this->request('POST', '/api/v1/auth', [

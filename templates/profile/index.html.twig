@@ -33,6 +33,11 @@
 
                             <dt class="col-sm-4">Баланс</dt>
                             <dd class="col-sm-8">{{ balance|number_format(2, '.', ' ') }}</dd>
+                            <p>
+                                <a href="{{ path('app_profile_transactions') }}" class="btn btn-outline-primary">
+                                    История операций
+                                </a>
+                            </p>
                         </dl>
                     </div>
 
