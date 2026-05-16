@@ -138,7 +138,13 @@ final class LessonControllerTest extends WebTestCase
     {
         $client = $this->createClientWithBillingMock();
 
-        $client->request('GET', '/lessons/1');
+        $lesson = static::getContainer()
+            ->get(\App\Repository\LessonRepository::class)
+            ->findOneBy([]);
+
+        self::assertNotNull($lesson);
+
+        $client->request('GET', '/lessons/'.$lesson->getId());
 
         self::assertResponseRedirects();
         self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
@@ -149,7 +155,13 @@ final class LessonControllerTest extends WebTestCase
         $client = $this->createClientWithBillingMock();
         $this->loginUserDirectly($client);
 
-        $client->request('GET', '/lessons/1');
+        $lesson = static::getContainer()
+            ->get(\App\Repository\LessonRepository::class)
+            ->findOneBy([]);
+
+        self::assertNotNull($lesson);
+
+        $client->request('GET', '/lessons/'.$lesson->getId());
 
         self::assertResponseIsSuccessful();
     }
@@ -159,7 +171,13 @@ final class LessonControllerTest extends WebTestCase
         $client = $this->createClientWithBillingMock();
         $this->loginUserDirectly($client);
 
-        $client->request('GET', '/lessons/1/edit');
+        $lesson = static::getContainer()
+            ->get(\App\Repository\LessonRepository::class)
+            ->findOneBy([]);
+
+        self::assertNotNull($lesson);
+
+        $client->request('GET', '/lessons/'.$lesson->getId().'/edit');
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -169,7 +187,13 @@ final class LessonControllerTest extends WebTestCase
         $client = $this->createClientWithBillingMock();
         $this->loginUserDirectly($client);
 
-        $client->request('GET', '/lessons/1');
+        $lesson = static::getContainer()
+            ->get(\App\Repository\LessonRepository::class)
+            ->findOneBy([]);
+
+        self::assertNotNull($lesson);
+
+        $client->request('GET', '/lessons/'.$lesson->getId());
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextNotContains('body', 'Редактировать');
@@ -186,4 +210,25 @@ final class LessonControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+
+    // Проверяет, что пользователь может открыть урок оплаченного курса.
+    public function testUserCanViewPaidCourseLesson(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $course = static::getContainer()
+            ->get(\App\Repository\CourseRepository::class)
+            ->findOneBy(['symbolCode' => 'php-basic']);
+
+        self::assertNotNull($course);
+
+        $lesson = $course->getLessons()->first();
+
+        self::assertNotFalse($lesson);
+
+        $client->request('GET', '/lessons/'.$lesson->getId());
+
+        self::assertResponseIsSuccessful();
+    }
 }

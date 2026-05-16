@@ -31,20 +31,20 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         );
 
         if (null === $token || '' === $token) {
-            throw new UserNotFoundException('РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ.');
+            throw new UserNotFoundException('Пользователь не найден.');
         }
 
         try {
             $currentUserResponse = $this->billingClient->getCurrentUser($token);
         } catch (BillingUnavailableException) {
             throw new CustomUserMessageAuthenticationException(
-                'РЎРµСЂРІРёСЃ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РџРѕРїСЂРѕР±СѓР№С‚Рµ Р°РІС‚РѕСЂРёР·РѕРІР°С‚СЊСЃСЏ РїРѕР·РґРЅРµРµ.'
+                'Сервис временно недоступен. Попробуйте авторизоваться позднее.'
             );
         }
 
         if (200 !== $currentUserResponse['code']) {
             throw new CustomUserMessageAuthenticationException(
-                $currentUserResponse['data']['message'] ?? 'РћС€РёР±РєР° Р°РІС‚РѕСЂРёР·Р°С†РёРё'
+                $currentUserResponse['data']['message'] ?? 'Ошибка авторизации'
             );
         }
 
@@ -52,7 +52,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $username = (string) ($currentUser['username'] ?? '');
 
         if ('' === $username || $username !== (string) $identifier) {
-            throw new UserNotFoundException('РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ.');
+            throw new UserNotFoundException('Пользователь не найден.');
         }
 
         $user = new User();
@@ -108,8 +108,6 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 
         if (isset($data['refresh_token'])) {
             $user->setRefreshToken($data['refresh_token']);
-        } elseif (isset($data['refreshToken'])) {
-            $user->setRefreshToken($data['refreshToken']);
         }
 
         return $user;

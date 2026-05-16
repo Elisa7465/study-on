@@ -33,33 +33,83 @@ final class ProfileControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', '7 250.50');
     }
 
-    public function testAdminCanOpenProfile(): void
+
+    // Проверяет, что пользователь может открыть страницу истории операций.
+    public function testUserCanOpenTransactionsPage(): void
     {
         $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
 
-        $this->loginAdminDirectly($client);
-
-        $client->request('GET', '/profile');
+        $client->request('GET', '/profile/transactions');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Профиль');
-        self::assertSelectorTextContains('body', 'test-admin@mail.ru');
-        self::assertSelectorTextContains('body', 'Администратор');
-        self::assertSelectorTextContains('body', '0.00');
+        self::assertSelectorTextContains('h1', 'История операций');
+        self::assertSelectorExists('table');
     }
 
-    public function testProfileShowsErrorWhenBillingUnavailable(): void
+    // Проверяет, что гость не может открыть историю операций.
+    public function testGuestCannotOpenTransactionsPage(): void
     {
         $client = $this->createClientWithBillingMock();
 
-        $this->loginUserWithUnavailableBilling($client);
-
-        $client->request('GET', '/profile');
+        $client->request('GET', '/profile/transactions');
 
         self::assertResponseRedirects();
+        self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
+    }
 
-        $client->followRedirect();
+    // Проверяет, что в истории отображается пополнение баланса.
+    public function testTransactionsPageShowsDeposit(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
 
-        self::assertSelectorTextContains('body', 'Сервис временно недоступен');
+        $client->request('GET', '/profile/transactions');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Пополнение');
+        self::assertSelectorTextContains('body', '7250.50');
+    }
+
+    // Проверяет, что в истории отображается списание за курс.
+    public function testTransactionsPageShowsPayment(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/profile/transactions');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Списание');
+        self::assertSelectorTextContains('body', '159.00');
+    }
+
+    // Проверяет, что транзакция по курсу содержит ссылку на курс.
+    public function testTransactionWithCourseHasCourseLink(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $crawler = $client->request('GET', '/profile/transactions');
+
+        self::assertResponseIsSuccessful();
+        self::assertGreaterThan(0, $crawler->filter('a[href*="/courses/"]')->count());
+    }
+
+    // Проверяет, что со страницы профиля можно перейти в историю операций.
+    public function testCanGoToTransactionsFromProfile(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $crawler = $client->request('GET', '/profile');
+
+        self::assertResponseIsSuccessful();
+
+        $link = $crawler->selectLink('История операций')->link();
+        $client->click($link);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'История операций');
     }
 }

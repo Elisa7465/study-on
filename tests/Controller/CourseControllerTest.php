@@ -230,4 +230,93 @@ final class CourseControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextNotContains('body', 'Новый курс');
     }
+
+    // Проверяет, что авторизованный пользователь видит цены платных курсов.
+    public function testUserSeesCoursePrices(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/courses/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', '159.00');
+        self::assertSelectorTextContains('body', '99.90');
+    }
+
+    // Проверяет, что на странице платного курса отображается кнопка покупки или аренды.
+    public function testPaidCoursePageShowsPaymentButton(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $crawler = $client->request('GET', '/courses/');
+        $link = $crawler->selectLink('Открыть курс')->first()->link();
+        $client->click($link);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Арендовано до');
+    }
+
+    // Проверяет, что пользователь может оплатить платный курс.
+    public function testUserCanPayCourse(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $course = static::getContainer()
+            ->get(\App\Repository\CourseRepository::class)
+            ->findOneBy(['symbolCode' => 'php-basic']);
+
+        self::assertNotNull($course);
+
+        $client->request('GET', '/courses/'.$course->getId().'/pay');
+
+        self::assertResponseRedirects('/courses/'.$course->getId());
+
+        $client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'Курс успешно оплачен');
+    }
+
+    // Проверяет, что неавторизованный пользователь не может оплатить курс.
+    public function testGuestCannotPayCourse(): void
+    {
+        $client = $this->createClientWithBillingMock();
+
+        $course = static::getContainer()
+            ->get(\App\Repository\CourseRepository::class)
+            ->findOneBy(['symbolCode' => 'php-basic']);
+
+        self::assertNotNull($course);
+
+        $client->request('GET', '/courses/'.$course->getId().'/pay');
+
+        self::assertResponseRedirects();
+        self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
+    }
+
+    // Проверяет, что купленный курс отображается как купленный.
+    public function testBoughtCourseShowsBoughtLabel(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/courses/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Куплено');
+    }
+
+    // Проверяет, что арендованный курс отображает дату окончания аренды.
+    public function testRentedCourseShowsExpirationDate(): void
+    {
+        $client = $this->createClientWithBillingMock();
+        $this->loginUserDirectly($client);
+
+        $client->request('GET', '/courses/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Арендовано до');
+    }
 }

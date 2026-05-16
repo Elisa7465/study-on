@@ -54,6 +54,15 @@ trait ControllerTestTrait
         return $client->followRedirect();
     }
 
+    protected function loginAsPoorUser(KernelBrowser $client): Crawler
+    {
+        $this->submitLoginForm($client, 'poor-user@mail.ru');
+
+        self::assertResponseRedirects();
+
+        return $client->followRedirect();
+    }
+
     protected function loginUserDirectly(KernelBrowser $client): void
     {
         $user = new User();
@@ -62,7 +71,8 @@ trait ControllerTestTrait
             ->setEmail('test-user@mail.ru')
             ->setRoles(['ROLE_USER'])
             ->setBalance(7250.50)
-            ->setApiToken('user-jwt-token');
+            ->setApiToken('user-jwt-token')
+            ->setRefreshToken('user-refresh-token');
 
         $client->loginUser($user, 'main');
     }
@@ -74,8 +84,23 @@ trait ControllerTestTrait
         $user
             ->setEmail('test-admin@mail.ru')
             ->setRoles(['ROLE_USER', 'ROLE_SUPER_ADMIN'])
-            ->setBalance(0.0)
-            ->setApiToken('admin-jwt-token');
+            ->setBalance(999.00)
+            ->setApiToken('admin-jwt-token')
+            ->setRefreshToken('admin-refresh-token');
+
+        $client->loginUser($user, 'main');
+    }
+
+    protected function loginPoorUserDirectly(KernelBrowser $client): void
+    {
+        $user = new User();
+
+        $user
+            ->setEmail('poor-user@mail.ru')
+            ->setRoles(['ROLE_USER'])
+            ->setBalance(0.00)
+            ->setApiToken('poor-user-jwt-token')
+            ->setRefreshToken('poor-user-refresh-token');
 
         $client->loginUser($user, 'main');
     }
@@ -88,7 +113,8 @@ trait ControllerTestTrait
             ->setEmail('test-user@mail.ru')
             ->setRoles(['ROLE_USER'])
             ->setBalance(7250.50)
-            ->setApiToken('unavailable-token');
+            ->setApiToken('unavailable-token')
+            ->setRefreshToken('user-refresh-token');
 
         $client->loginUser($user, 'main');
     }
