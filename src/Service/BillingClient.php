@@ -32,6 +32,38 @@ class BillingClient
         );
     }
 
+
+    public function createCourse(array $courseData, string $token): array
+    {
+        return $this->request(
+            'POST',
+            '/api/v1/courses',
+            [
+                'type' => $courseData['type'],
+                'title' => $courseData['title'],
+                'code' => $courseData['code'],
+                'price' => $courseData['price'],
+            ],
+            $token
+        );
+    }
+
+    public function updateCourse(string $currentCode, array $courseData, string $token): array
+    {
+        return $this->request(
+            'POST',
+            sprintf('/api/v1/courses/%s', rawurlencode($currentCode)),
+            [
+                'type' => $courseData['type'],
+                'title' => $courseData['title'],
+                'code' => $courseData['code'],
+                'price' => $courseData['price'],
+            ],
+            $token
+        );
+    }
+
+
     public function getTransactions(string $token, array $filters = []): array
     {
         $query = http_build_query([
