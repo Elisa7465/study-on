@@ -1,17 +1,17 @@
 name: CI
+
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    #   ubuntu-latest должна работать стабильно, можно указать явно другую версию
-    #   steps можно сильнее разбить на категории
-    #   тут представлен пример только для запуска тестов. Можно еще проверять код-стайл и доступность документации
-    #   часто встречается на рабочих проектах
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -19,8 +19,8 @@ jobs:
           extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql
           coverage: pcov
           tools: composer
-      - name: Setting environment and composer
-        # скорректируйте название БД и контейнера, если нужно
+
+      - name: Setting environment
         run: |
           echo "DATABASE_URL=pgsql://pguser:pguser@postgres:5432/study_on" >> .env.local
 
@@ -30,23 +30,21 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
           mkdir ~/.yarn
-          # нужно создать сеть, так как в github Actions study-on изолирован от биллинга
-          docker network create study-onbilling_default
+          docker network create study-onbilling_default || true
           docker-compose build
           docker-compose up -d
           docker-compose exec -T php composer install --no-interaction --prefer-dist
           docker-compose run --rm -u root --entrypoint sh node -lc "npm install -g yarn && yarn install && yarn encore dev"
           docker ps -a
+
       - name: Setting test environment and DB
-        # скорректируйте название БД и контейнера, если нужно
         run: |
           echo "DATABASE_URL=pgsql://pguser:pguser@postgres:5432/study_on" >> .env.test.local
-          ls -la
-          docker ps -a
           docker-compose exec -T php php bin/console doctrine:database:drop --force --env=test || true
           docker-compose exec -T php php bin/console doctrine:database:create --env=test
           docker-compose exec -T php php bin/console doctrine:migrations:migrate -n --env=test
           docker-compose exec -T php php bin/console doctrine:fixtures:load -n --env=test
-      - name: run PHPUnit
+
+      - name: Run PHPUnit
         run: |
           docker-compose exec -T php php bin/phpunit
