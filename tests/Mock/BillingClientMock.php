@@ -245,6 +245,25 @@ final class BillingClientMock extends BillingClient
         ];
     }
 
+    public function createCourse(array $data, string $token): array
+    {
+        return [
+            'code' => Response::HTTP_CREATED,
+            'data' => [
+                'success' => true,
+            ],
+        ];
+    }
+
+    public function updateCourse(string $code, array $data, string $token): array
+    {
+        return [
+            'code' => Response::HTTP_OK,
+            'data' => [
+                'success' => true,
+            ],
+        ];
+    }
     public function getTransactions(string $token, array $filters = []): array
     {
         $transactions = [

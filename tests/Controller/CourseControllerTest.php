@@ -53,6 +53,8 @@ final class CourseControllerTest extends WebTestCase
             'course[symbolCode]' => 'docker-basic',
             'course[title]' => 'Основы Docker',
             'course[description]' => 'Курс по Docker',
+            'course[type]' => 'buy',
+            'course[price]' => 1000,
         ]);
         $client->submit($form);
 
@@ -94,9 +96,11 @@ final class CourseControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/courses/new');
 
         $form = $crawler->selectButton('Создать курс')->form([
-            'course[symbolCode]' => 'php-basic',
-            'course[title]' => 'Другой курс',
+            'course[symbolCode]' => 'english-basic',
+            'course[title]' => 'Дубликат курса',
             'course[description]' => 'Описание',
+            'course[type]' => 'rent',
+            'course[price]' => 1000,
         ]);
 
         $client->submit($form);
@@ -145,7 +149,9 @@ final class CourseControllerTest extends WebTestCase
             'course[symbolCode]' => 'english-basic',
             'course[title]' => 'Новое имя для курса',
             'course[description]' => 'Новое описание курса',
-            ]);
+            'course[type]' => 'rent',
+            'course[price]' => 99.90,
+        ]);
         $client->submit($form);
 
         self::assertResponseRedirects();
